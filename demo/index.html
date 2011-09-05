@@ -79,7 +79,7 @@
 			}
 			
 			function saveForm() {
-				viewModel.user.remote.saveFromForm(document.user, function (result) { 
+				viewModel.user.remote.save(document.user, function (result) { 
 					if (result.success) {
 						viewModel.userList.remote.load({}, function () {
 							document.load.userId.value = result.data.id;

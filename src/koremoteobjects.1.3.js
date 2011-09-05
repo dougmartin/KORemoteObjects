@@ -211,12 +211,12 @@
 		},
 		
 		// adapted from http://v3.javascriptmvc.com/jquery/dist/jquery.formparams.js
-		getFormData: function (form, convert) {
+		getFormData: function (formOrData, convert) {
 			var radioCheck = /radio|checkbox/i,
 				keyBreaker = /[^\[\]]+/g,
 				numberMatcher = /^[\-+]?[0-9]*\.?[0-9]+([eE][\-+]?[0-9]+)?$/,
 				data = {},
-				current, validator;
+				form, current, validator;
 
 			function isNumber( value ) {
 				if ( typeof value == "number" ) {
@@ -228,9 +228,9 @@
 				return value.match(numberMatcher);
 			};
 			
-			form = form || this.remote.settings.form;
+			form = formOrData || this.remote.settings.form;
 			if (!form) {
-				return false;
+				return formOrData;
 			}
 			
 			if (form.nodeName.toLowerCase() !== "form" || !form.elements ) {
@@ -296,6 +296,13 @@
 			});
 			
 			return data;
+		},
+		
+		checkForFormData: function (data) {
+			if ((data === undefined) || (data instanceof HTMLFormElement)) {
+				return this.getFormData(data);
+			}
+			return data;
 		}
 	};
 		
@@ -313,59 +320,38 @@
 		},
 		
 		load: function (data, onSuccess, onError, onComplete) {
-			this.helpers.ajax("load", data, "GET", onSuccess, onError, onComplete);
+			checkedData = this.helpers.checkForFormData(data);
+			if (checkedData !== false) {
+				this.helpers.ajax("load", checkedData, "GET", onSuccess, onError, onComplete);
+			}
 		},
 		
 		create: function (data, onSuccess, onError, onComplete) {
-			if (data === undefined) {
-				data = this.helpers.getFormData();
-			}
-			if (data !== false) {
-				this.helpers.ajax("create", jQuery.extend({}, this.rootObject(), data), "POST", onSuccess, onError, onComplete);
-			}
-		},
-		
-		createFromForm: function (form, onSuccess, onError, onComplete) {
-			var data = this.helpers.getFormData(form);
-			if (data !== false) {
-				this.create(data, onSuccess, onError, onComplete);
+			checkedData = this.helpers.checkForFormData(data);
+			if (checkedData !== false) {
+				this.helpers.ajax("create", jQuery.extend({}, this.rootObject(), checkedData), "POST", onSuccess, onError, onComplete);
 			}
 		},
 		
 		update: function (data, onSuccess, onError, onComplete) {
-			if (data === undefined) {
-				data = this.helpers.getFormData();
-			}
-			if (data !== false) {
-				this.helpers.ajax("update", jQuery.extend({}, this.rootObject(), data), this.helpers.useRestMethods("PUT", "POST"), onSuccess, onError, onComplete);
-			}
-		},
-		
-		updateFromForm: function (form, onSuccess, onError, onComplete) {
-			var data = this.helpers.getFormData(form);
-			if (data !== false) {
-				this.update(data, onSuccess, onError, onComplete);
+			checkedData = this.helpers.checkForFormData(data);
+			if (checkedData !== false) {
+				this.helpers.ajax("update", jQuery.extend({}, this.rootObject(), checkedData), this.helpers.useRestMethods("PUT", "POST"), onSuccess, onError, onComplete);
 			}
 		},
 		
 		save: function (data, onSuccess, onError, onComplete) {
-			if (data === undefined) {
-				data = this.helpers.getFormData();
-			}
-			if (data !== false) {
-				this.state() == "init" ? this.create.call(this, data, onSuccess, onError, onComplete) : this.update.call(this, data, onSuccess, onError, onComplete);
-			}
-		},
-		
-		saveFromForm: function (form, onSuccess, onError, onComplete) {
-			var data = this.helpers.getFormData(form);
-			if (data !== false) {
-				this.save(data, onSuccess, onError, onComplete);
+			checkedData = this.helpers.checkForFormData(data);
+			if (checkedData !== false) {
+				this.state() == "init" ? this.create.call(this, checkedData, onSuccess, onError, onComplete) : this.update.call(this, data, onSuccess, onError, onComplete);
 			}
 		},
 		
 		destroy: function (data, onSuccess, onError, onComplete) {
-			this.helpers.ajax("destroy", data, this.helpers.useRestMethods("DELETE", "POST"), onSuccess, onError, onComplete);
+			checkedData = this.helpers.checkForFormData(data);
+			if (checkedData !== false) {
+				this.helpers.ajax("destroy", checkedData, this.helpers.useRestMethods("DELETE", "POST"), onSuccess, onError, onComplete);
+			}
 		},
 		
 		resetForm: function (form) {

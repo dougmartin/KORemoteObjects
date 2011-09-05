@@ -61,7 +61,7 @@
 		ajax: function (action, data, method, onSuccess, onError, onComplete) {
 			var startState = this.remote.state(),
 				self = this,
-				successes, errors, completes;
+				beforeSends, successes, errors, completes;
 		
 			function addEnding(word, ending) {
 				var rootWord = word.substr(word.length - 1) == "e" ? word.substr(0, word.length - 1) : word;
@@ -70,7 +70,7 @@
 			
 			// self is used in here as the callbacks come in with this assigned to window by jQuery.ajax()
 			// we can't set the context on jQuery.ajax
-			function getAjaxCallbacks(action, successes, errors, completes) {
+			function getAjaxCallbacks(action, beforeSends, successes, errors, completes) {
 				
 				function applyForEachCallback(callbacks, args) {
 					for (var i = 0, j = callbacks.length; i < j; i++) {
@@ -81,6 +81,9 @@
 				}		
 				
 				return {
+					beforeSend: function (jqXHR, settings) {
+						applyForEachCallback.call(self, beforeSends, [jqXHR, settings]);
+					},
 					success: function (data, textStatus, jqXHR) {
 						applyForEachCallback.call(self, successes, [parseResult.call(self, data), data, textStatus, jqXHR, action, self.remote.type]);
 					},
@@ -143,6 +146,10 @@
 				return false;
 			}
 			
+			beforeSends = [function (jqXHR, settings) {
+				this.log({"action": action, "method": settings.type, "url": settings.url, "data": data});
+			}, this.remote.settings.ajax.beforeSend, remoteSettings.ajax.beforeSend];
+			
 			successes = [function (result, textStatus, jqXHR) {
 				var defaultError, parsedResult = parseResult.call(this, result);
 				
@@ -169,7 +176,7 @@
 			
 			this.remote.state(addEnding(action, "ing"));
 			
-			jQuery.ajax(jQuery.extend({}, remoteSettings.ajax, this.remote.settings.ajax, getAjaxCallbacks("create", successes, errors, completes), {
+			jQuery.ajax(jQuery.extend({}, remoteSettings.ajax, this.remote.settings.ajax, getAjaxCallbacks("create", beforeSends, successes, errors, completes), {
 				url: getUrl.call(this, action, this.remote.type, method),
 				type: getMethod.call(this, action, this.remote.type, method),
 				data: parseRequestData.call(this, action, this.remote.type, data)
@@ -303,6 +310,14 @@
 				return this.getFormData(data);
 			}
 			return data;
+		},
+		
+		log: function (data) {
+			if (ko.remoteObservable.debug) {
+				ko.remoteObservable.debugLog.push(jQuery.extend({}, data, {
+					type: this.remote.type
+				}));
+			}
 		}
 	};
 		
@@ -310,6 +325,7 @@
 	ko.remoteable["fn"] = {
 		
 		init: function (data) {
+			this.helpers.log({"action": "init"});
 			this.state("init");
 			this.rootObject(data);
 		},
@@ -401,6 +417,29 @@
 			this.notifySubscribers(this());
 		}
 	});
+	
+	ko.remoteObservable.debug = false;
+	ko.remoteObservable.debugLog = ko.observableArray();
+	ko.bindingHandlers.remoteObservableDebugLog = {
+		init: function(element, valueAccessor, allBindingsAccessor, viewModel) {
+			$(element).html("<table class='remoteObservableDebugLog'><thead><tr><th>Action</th><th>Type</th><th>Method</th><th>URL</th><th>Data</th></tr></thead><tbody></tbody></table>");
+		},
+		update: function(element, valueAccessor, allBindingsAccessor, viewModel) {
+			var rows = [];
+			jQuery.each(ko.utils.unwrapObservable(valueAccessor()), function (index, logEntry) {
+				var cells = [];
+				jQuery.each(["action", "type", "method", "url", "data"], function (index, logItem) {
+					var value = logEntry.hasOwnProperty(logItem) ? logEntry[logItem] : "&nbsp;";
+					if (typeof value === "object") {
+						value = ko.toJSON(value);
+					}
+					cells.push("<td>" + value + "</td>");
+				})
+				rows.push("<tr>" + cells.join("") + "</tr>");
+			});
+			$(element).find("tbody").html(rows.join(""));
+		}
+	};
 	
 	// the exact same as ko.observableArray except for the first two lines, I feel bad for all this copy pasta but result is buried in observableArray
 	ko.remoteObservableArray = function (type, options) {

@@ -46,15 +46,10 @@
 						colors: ["blue", "red", "green", "pink", "lavender"]
 					};
 					
-					// We will use GETs to demo.php for all the methods since we can't rewrite urls.
-					// If you don't override getMethod it uses GET for load and POST for create, update and destroy unless
-					// you have the useRestMethods setting enabled, then it uses GET, POST, PUT and DELETE
+					// We will use demo.php for all the methods since we can't rewrite urls.
 					ko.remoteSetup({
 						"getUrl": function (action, type, method) {
 							return "demo.php?action=" + action + "&type=" + type;
-						},
-						"getMethod": function (action, type, method) {
-							return "GET";
 						}
 					});
 					

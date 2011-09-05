@@ -1,0 +1,137 @@
+<html>
+	<head>
+		<script type="text/javascript" src="../3rd/jquery-1.6.2.js"></script>
+		<script type="text/javascript" src="../3rd/jquery.validate.js"></script>
+		<script type="text/javascript" src="../3rd/knockout-1.3.0beta.debug.js"></script>
+		<script type="text/javascript" src="../src/koremoteobjects.1.3.js"></script>
+		
+		<script type="text/javascript">
+			var viewModel;
+			
+			// the include will not define ko.remoteObservable if jQuery is not defined or Knockout < version 1.3
+			if (!ko.remoteObservable) {
+				alert("ko.remoteObservable is not defined (check console.log for an exception");
+				
+				jQuery(function () {
+					$("#remoteInput").hide();
+				});
+			}
+			else {
+				jQuery(function () {
+					
+					viewModel = {
+						user: ko.remoteObservable("user", {
+							"data": {
+								"id": 0,
+								"name": "",
+								"email": "",
+								"favoriteColor": "",
+								"createdAt": 0
+							},
+							"form": document.user
+						}),
+						userList: ko.remoteObservableArray("userList"),
+						selectedUserId: ko.observable(),
+						colors: ["blue", "red", "green", "pink", "lavender"]
+					};
+					
+					ko.remoteSetup({
+						"getUrl": function (action, type, method) {
+							return "demo.php?action=" + action + "&type=" + type;
+						},
+						
+						// We will use GETs to demo.php for all the methods since we can't rewrite urls, normally you don't override this.
+						// If you don't override getMethod it uses GET for load and POST for create, update and destroy unless
+						// you have the useRestMethods setting enabled, then it uses GET, POST, PUT and DELETE
+						"getMethod": function (action, type, method) {
+							return "GET";
+						},
+						
+						"validate": {
+							"user": {
+								"rules":  {
+									"name": "required",
+									"email": {
+										"required": true,
+										"email": true
+									},
+									"favoriteColor": "required"
+								}
+							}
+						}
+					});
+					
+					ko.applyBindings(viewModel); 
+					
+					viewModel.userList.load();
+					
+					viewModel.selectedUserId.subscribe(function () {
+						var id = viewModel.selectedUserId();
+						if (id) {
+							viewModel.user.load({id: id});
+						}
+						else {
+							viewModel.user.clear();
+						}
+						viewModel.user.resetForm(document.user);
+					});
+
+				});
+			}
+				
+			function setFakeEmail() {
+				document.user.email.value = "fake" + Math.floor(Math.random() * 1000) + "@example.com";
+			}
+			
+			function saveForm() {
+				viewModel.user.saveFromForm(document.user, function (result) { 
+					if (result.success) {
+						viewModel.userList.load({}, function () {
+							document.load.userId.value = result.data.id;
+						}); 
+					}
+				})
+			}
+			
+		</script>
+	</head>
+	<body>
+		<div id="remoteInput">
+			<form name="load">
+				<p>
+					Load User: 
+					<select name="userId" data-bind="options: userList, optionsText: 'name', optionsValue: 'id', value: selectedUserId, optionsCaption: 'Choose...'"></select>
+					(current user state: <span data-bind="text: user.state"></span>)
+				</p>
+				<p data-bind="visible: user.error">
+					<span data-bind="text: user.error"></span>
+				</p>
+			</form>
+			
+			<form name="user">
+				<p>
+					<table>
+						<tr data-bind="visible: user().id"><td>ID</td><td data-bind="text: user().id"></td></tr>
+						<tr><td>Name</td><td><input type="text" name="name" data-bind="value: user().name"></td></tr>
+						<tr><td>Email</td><td><input type="text" name="email" data-bind="value: user().email"></td></tr>
+						<tr><td>Favorite Color</td><td><select name="favoriteColor" data-bind="options: colors, value: user().favoriteColor, optionsCaption: 'Choose...'"></td></tr>
+						<tr>
+							<td>&nbsp;</td>
+							<td>
+								<input type="button" value="Clear" data-bind="click: function () { user.clear(); document.load.userId.selectedIndex = 0; }" />
+								<span data-bind="visible: user().id">
+									<input type="button" value="Update" data-bind="click: saveForm" />
+									<input type="button" value="Delete" data-bind="click: function () { user.destroy({id: user().id}, function () { user.clear(); userList.load(); }); }" />
+								</span>
+								<span data-bind="visible: user().id == undefined">
+									<input type="button" value="Fake Email" data-bind="click: setFakeEmail" />
+									<input type="button" value="Create" data-bind="click: saveForm" />
+								</span>
+							</td>
+						</tr>
+					</table>
+				</p>
+			</form>
+		</div>
+	</body>
+</html>

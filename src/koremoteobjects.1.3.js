@@ -37,31 +37,30 @@
 				}
 			}, options);
 			
-		ko.utils.extend(this, ko.remoteable["fn"]);
+		this.remote = {
+			"rootObject": this,
+			"type": type,
+			"settings": settings,
+			"state": state,
+			"error": error,
+			"isArray": isArray,
+			"hasData": hasData
+		};
+		ko.utils.extend(this.remote, ko.remoteable["fn"]);
 		
-		ko.exportProperty(this, "type", type);
-		ko.exportProperty(this, "settings", settings);
-		ko.exportProperty(this, "state", state);
-		ko.exportProperty(this, "error", error);
-		ko.exportProperty(this, "isArray", isArray);
-		ko.exportProperty(this, "hasData", hasData);
-		
-		ko.exportProperty(this, "init", this.init);
-		ko.exportProperty(this, "clear", this.clear);
-		ko.exportProperty(this, "load", this.load);
-		ko.exportProperty(this, "create", this.create);
-		ko.exportProperty(this, "createFromForm", this.createFromForm);
-		ko.exportProperty(this, "update", this.update);
-		ko.exportProperty(this, "updateFromForm", this.updateFromForm);
-		ko.exportProperty(this, "save", this.save);
-		ko.exportProperty(this, "saveFromForm", this.saveFromForm);
-		ko.exportProperty(this, "destroy", this.destroy);
+		this.remote.helpers = {
+			"rootObject": this,
+			"remote": this.remote
+		};
+		ko.utils.extend(this.remote.helpers, remoteableHelpers);
+
+		ko.exportProperty(this, "remote", this.remote);
 	}
 	
-	ko.remoteable["fn"] = {
-		
-		_ajax: function (action, data, method, onSuccess, onError, onComplete) {
-			var startState = this.state(),
+	remoteableHelpers = {
+		ajax: function (action, data, method, onSuccess, onError, onComplete) {
+			var startState = this.remote.state(),
+				self = this,
 				successes, errors, completes;
 		
 			function addEnding(word, ending) {
@@ -69,32 +68,34 @@
 				return rootWord + ending;
 			}
 			
+			// self is used in here as the callbacks come in with this assigned to window by jQuery.ajax()
+			// we can't set the context on jQuery.ajax
 			function getAjaxCallbacks(action, successes, errors, completes) {
 				
 				function applyForEachCallback(callbacks, args) {
 					for (var i = 0, j = callbacks.length; i < j; i++) {
 						if (callbacks[i]) {
-							callbacks[i].apply(this, args);
+							callbacks[i].apply(self, args);
 						}
 					}
 				}		
 				
 				return {
 					success: function (data, textStatus, jqXHR) {
-						applyForEachCallback.call(this, successes, [parseResult.call(this, data), data, textStatus, jqXHR, action, this.type]);
+						applyForEachCallback.call(self, successes, [parseResult.call(self, data), data, textStatus, jqXHR, action, self.remote.type]);
 					},
 					error: function (jqXHR, textStatus, errorThrown) {
-						applyForEachCallback.call(this, errors, [jqXHR, textStatus, errorThrown, action, this.type]);
+						applyForEachCallback.call(self, errors, [jqXHR, textStatus, errorThrown, action, self.remote.type]);
 					},
 					complete: function (jqXHR, textStatus) {
-						applyForEachCallback.call(this, completes, [jqXHR, textStatus, action, this.type]);
+						applyForEachCallback.call(self, completes, [jqXHR, textStatus, action, self.remote.type]);
 					}			
 				};
 			}
 			
 			function getUrl(action, type, method) {
-				if (this.settings.getUrl) {
-					return this.settings.getUrl(action, type, method);
+				if (this.remote.settings.getUrl) {
+					return this.remote.settings.getUrl(action, type, method);
 				}
 				if (remoteSettings.getUrl) {
 					return remoteSettings.getUrl(action, type, method);
@@ -103,8 +104,8 @@
 			}
 			
 			function getMethod(action, type, method) {
-				if (this.settings.getMethod) {
-					return this.settings.getMethod(action, type, method);
+				if (this.remote.settings.getMethod) {
+					return this.remote.settings.getMethod(action, type, method);
 				}
 				if (remoteSettings.getMethod) {
 					return remoteSettings.getMethod(action, type, method);
@@ -113,8 +114,8 @@
 			}
 
 			function parseRequestData(action, type, data) {
-				if (this.settings.parseRequestData) {
-					return this.settings.parseRequestData(action, type, data);
+				if (this.remote.settings.parseRequestData) {
+					return this.remote.settings.parseRequestData(action, type, data);
 				}
 				if (remoteSettings.parseRequestData) {
 					return remoteSettings.parseRequestData(action, type, data);
@@ -123,7 +124,7 @@
 			}
 
 			function parseResult(result) {
-				if (this.settings.parseResult) {
+				if (this.remote.settings.parseResult) {
 					return settings.parseResult(action, type, result);
 				}
 				if (remoteSettings.parseResult) {
@@ -133,8 +134,8 @@
 			}
 			
 			function setData(action, type, data) {
-				if (this.settings.setData) {
-					return this.settings.setData(action, type, data);
+				if (this.remote.settings.setData) {
+					return this.remote.settings.setData(action, type, data);
 				}
 				if (remoteSettings.setData) {
 					return remoteSettings.setData(action, type, data);
@@ -146,42 +147,42 @@
 				var defaultError, parsedResult = parseResult.call(this, result);
 				
 				if (parsedResult && parsedResult.success) {
-					if (!setData.call(this, action, this.type, parsedResult.data || {})) {
-						this(parsedResult.data || {});
+					if (!setData.call(this, action, this.remote.type, parsedResult.data || {})) {
+						this.rootObject(parsedResult.data || {});
 					}
-					this.state(addEnding(action, "ed"));
-					this.error(undefined);
+					this.remote.state(addEnding(action, "ed"));
+					this.remote.error(undefined);
 				}
 				else {
-					this.state(startState);
-					defaultError = "Error " + addEnding(action, "ing") + " " + this.type;
-					this.error(parsedResult ? parsedResult.error || defaultError : defaultError);
+					this.remote.state(startState);
+					defaultError = "Error " + addEnding(action, "ing") + " " + this.remote.type;
+					this.remote.error(parsedResult ? parsedResult.error || defaultError : defaultError);
 				}
-			}, onSuccess, this.settings.ajax.success, remoteSettings.ajax.success];
+			}, onSuccess, this.remote.settings.ajax.success, remoteSettings.ajax.success];
 			
 			errors = [function (jqXHR, textStatus, errorThrown) {
-				this.state(startState);
-				this.error(errorThrown);
-			}, onError, this.settings.ajax.error, remoteSettings.ajax.error];
+				this.remote.state(startState);
+				this.remote.error(errorThrown);
+			}, onError, this.remote.settings.ajax.error, remoteSettings.ajax.error];
 			
-			completes = [onComplete, this.settings.ajax.complete, remoteSettings.ajax.complete];
+			completes = [onComplete, this.remote.settings.ajax.complete, remoteSettings.ajax.complete];
 			
-			this.state(addEnding(action, "ing"));
+			this.remote.state(addEnding(action, "ing"));
 			
-			jQuery.ajax(jQuery.extend({}, remoteSettings.ajax, this.settings.ajax, getAjaxCallbacks("create", successes, errors, completes), {
-				url: getUrl.call(this, action, this.type, method),
-				type: getMethod.call(this, action, this.type, method),
-				data: parseRequestData.call(this, action, this.type, data),
-				context: this
+			jQuery.ajax(jQuery.extend({}, remoteSettings.ajax, this.remote.settings.ajax, getAjaxCallbacks("create", successes, errors, completes), {
+				url: getUrl.call(this, action, this.remote.type, method),
+				type: getMethod.call(this, action, this.remote.type, method),
+				data: parseRequestData.call(this, action, this.remote.type, data)
+				// context: this.remote <-- don't do this, because you'll be a stack overflow with the circular reference back to the root object
 			}));		
 		},
 		
-		_useRestMethods: function (ifRest, ifNotRest) {
+		useRestMethods: function (ifRest, ifNotRest) {
 			// the settings flag overrides and remote settings flag, but they are both boolean so we have to do the dance
-			return (this.settings.useRestMethods === true) || ((this.settings.useRestMethods === undefined) && (remoteSettings.useRestMethods === true)) ? ifRest : ifNotRest;
+			return (this.remote.settings.useRestMethods === true) || ((this.remote.settings.useRestMethods === undefined) && (remoteSettings.useRestMethods === true)) ? ifRest : ifNotRest;
 		},
 		
-		_getFormValidator: function (form) {
+		getFormValidator: function (form) {
 			var $form = $(form), 
 				formName = $form.attr("name"),
 				validationSettings;
@@ -202,15 +203,15 @@
 				return undefined;
 			}
 
-			validationSettings = getValidationSettings(this.settings, formName);
-			if (validationSettings !== false) {
+			validationSettings = getValidationSettings(this.remote.settings);
+			if (validationSettings === false) {
 				validationSettings = getValidationSettings(remoteSettings, formName);
 			}
 			return validationSettings !== false ? $form.validate(validationSettings || {}) : false;
 		},
 		
 		// adapted from http://v3.javascriptmvc.com/jquery/dist/jquery.formparams.js
-		_getFormData: function (form, convert) {
+		getFormData: function (form, convert) {
 			var radioCheck = /radio|checkbox/i,
 				keyBreaker = /[^\[\]]+/g,
 				numberMatcher = /^[\-+]?[0-9]*\.?[0-9]+([eE][\-+]?[0-9]+)?$/,
@@ -227,7 +228,7 @@
 				return value.match(numberMatcher);
 			};
 			
-			form = form || this.settings.form;
+			form = form || this.remote.settings.form;
 			if (!form) {
 				return false;
 			}
@@ -240,7 +241,7 @@
 			
 			// do optional validation 
 			if (form && jQuery.fn.validate) {
-				validator = this._getFormValidator(form);
+				validator = this.getFormValidator(form);
 				if (validator && !validator.form()) {
 					return false;
 				}
@@ -295,38 +296,37 @@
 			});
 			
 			return data;
-		},
-
+		}
+	};
 		
-		//
-		// exported functions
-		//
+	// these function reside under .remote, this referes to object.remote, not object
+	ko.remoteable["fn"] = {
 		
 		init: function (data) {
 			this.state("init");
-			this(data);
+			this.rootObject(data);
 		},
 		
 		clear: function () {
 			this.state("init");
-			this({});
+			this.rootObject({});
 		},
 		
 		load: function (data, onSuccess, onError, onComplete) {
-			this._ajax("load", data, "GET", onSuccess, onError, onComplete);
+			this.helpers.ajax("load", data, "GET", onSuccess, onError, onComplete);
 		},
 		
 		create: function (data, onSuccess, onError, onComplete) {
 			if (data === undefined) {
-				data = this._getFormData();
+				data = this.helpers.getFormData();
 			}
 			if (data !== false) {
-				this._ajax("create", jQuery.extend({}, this(), data), "POST", onSuccess, onError, onComplete);
+				this.helpers.ajax("create", jQuery.extend({}, this.rootObject(), data), "POST", onSuccess, onError, onComplete);
 			}
 		},
 		
 		createFromForm: function (form, onSuccess, onError, onComplete) {
-			var data = this._getFormData(form);
+			var data = this.helpers.getFormData(form);
 			if (data !== false) {
 				this.create(data, onSuccess, onError, onComplete);
 			}
@@ -334,15 +334,15 @@
 		
 		update: function (data, onSuccess, onError, onComplete) {
 			if (data === undefined) {
-				data = this._getFormData();
+				data = this.helpers.getFormData();
 			}
 			if (data !== false) {
-				this._ajax("update", jQuery.extend({}, this(), data), this._useRestMethods("PUT", "POST"), onSuccess, onError, onComplete);
+				this.helpers.ajax("update", jQuery.extend({}, this.rootObject(), data), this.helpers.useRestMethods("PUT", "POST"), onSuccess, onError, onComplete);
 			}
 		},
 		
 		updateFromForm: function (form, onSuccess, onError, onComplete) {
-			var data = this._getFormData(form);
+			var data = this.helpers.getFormData(form);
 			if (data !== false) {
 				this.update(data, onSuccess, onError, onComplete);
 			}
@@ -350,7 +350,7 @@
 		
 		save: function (data, onSuccess, onError, onComplete) {
 			if (data === undefined) {
-				data = this._getFormData();
+				data = this.helpers.getFormData();
 			}
 			if (data !== false) {
 				this.state() == "init" ? this.create.call(this, data, onSuccess, onError, onComplete) : this.update.call(this, data, onSuccess, onError, onComplete);
@@ -358,21 +358,21 @@
 		},
 		
 		saveFromForm: function (form, onSuccess, onError, onComplete) {
-			var data = this._getFormData(form);
+			var data = this.helpers.getFormData(form);
 			if (data !== false) {
 				this.save(data, onSuccess, onError, onComplete);
 			}
 		},
 		
 		destroy: function (data, onSuccess, onError, onComplete) {
-			this._ajax("destroy", data, this._useRestMethods("DELETE", "POST"), onSuccess, onError, onComplete);
+			this.helpers.ajax("destroy", data, this.helpers.useRestMethods("DELETE", "POST"), onSuccess, onError, onComplete);
 		},
 		
 		resetForm: function (form) {
 			var validator;
 			
 			if (form && jQuery.fn.validate) {
-				validator = this._getFormValidator(form);
+				validator = this.helpers.getFormValidator(form);
 				if (validator) {
 					validator.resetForm();
 				}

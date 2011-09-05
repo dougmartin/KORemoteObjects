@@ -28,27 +28,7 @@
 								"favoriteColor": "",
 								"createdAt": 0
 							},
-							"form": document.user
-						}),
-						userList: ko.remoteObservableArray("userList"),
-						selectedUserId: ko.observable(),
-						colors: ["blue", "red", "green", "pink", "lavender"]
-					};
-					
-					ko.remoteSetup({
-						"getUrl": function (action, type, method) {
-							return "demo.php?action=" + action + "&type=" + type;
-						},
-						
-						// We will use GETs to demo.php for all the methods since we can't rewrite urls, normally you don't override this.
-						// If you don't override getMethod it uses GET for load and POST for create, update and destroy unless
-						// you have the useRestMethods setting enabled, then it uses GET, POST, PUT and DELETE
-						"getMethod": function (action, type, method) {
-							return "GET";
-						},
-						
-						"validate": {
-							"user": {
+							"validate": {
 								"rules":  {
 									"name": "required",
 									"email": {
@@ -58,22 +38,37 @@
 									"favoriteColor": "required"
 								}
 							}
+						}),
+						userList: ko.remoteObservableArray("userList"),
+						selectedUserId: ko.observable(),
+						colors: ["blue", "red", "green", "pink", "lavender"]
+					};
+					
+					// We will use GETs to demo.php for all the methods since we can't rewrite urls.
+					// If you don't override getMethod it uses GET for load and POST for create, update and destroy unless
+					// you have the useRestMethods setting enabled, then it uses GET, POST, PUT and DELETE
+					ko.remoteSetup({
+						"getUrl": function (action, type, method) {
+							return "demo.php?action=" + action + "&type=" + type;
+						},
+						"getMethod": function (action, type, method) {
+							return "GET";
 						}
 					});
 					
 					ko.applyBindings(viewModel); 
 					
-					viewModel.userList.load();
+					viewModel.userList.remote.load();
 					
 					viewModel.selectedUserId.subscribe(function () {
 						var id = viewModel.selectedUserId();
 						if (id) {
-							viewModel.user.load({id: id});
+							viewModel.user.remote.load({id: id});
 						}
 						else {
-							viewModel.user.clear();
+							viewModel.user.remote.clear();
 						}
-						viewModel.user.resetForm(document.user);
+						viewModel.user.remote.resetForm(document.user);
 					});
 
 				});
@@ -84,15 +79,14 @@
 			}
 			
 			function saveForm() {
-				viewModel.user.saveFromForm(document.user, function (result) { 
+				viewModel.user.remote.saveFromForm(document.user, function (result) { 
 					if (result.success) {
-						viewModel.userList.load({}, function () {
+						viewModel.userList.remote.load({}, function () {
 							document.load.userId.value = result.data.id;
 						}); 
 					}
 				})
 			}
-			
 		</script>
 	</head>
 	<body>
@@ -101,10 +95,10 @@
 				<p>
 					Load User: 
 					<select name="userId" data-bind="options: userList, optionsText: 'name', optionsValue: 'id', value: selectedUserId, optionsCaption: 'Choose...'"></select>
-					(current user state: <span data-bind="text: user.state"></span>)
+					(current user remote state: <span data-bind="text: user.remote.state"></span>)
 				</p>
-				<p data-bind="visible: user.error">
-					<span data-bind="text: user.error"></span>
+				<p data-bind="visible: user.remote.error">
+					<span data-bind="text: user.remote.error"></span>
 				</p>
 			</form>
 			
@@ -118,10 +112,10 @@
 						<tr>
 							<td>&nbsp;</td>
 							<td>
-								<input type="button" value="Clear" data-bind="click: function () { user.clear(); document.load.userId.selectedIndex = 0; }" />
+								<input type="button" value="Clear" data-bind="click: function () { user.remote.clear(); document.load.userId.selectedIndex = 0; }" />
 								<span data-bind="visible: user().id">
 									<input type="button" value="Update" data-bind="click: saveForm" />
-									<input type="button" value="Delete" data-bind="click: function () { user.destroy({id: user().id}, function () { user.clear(); userList.load(); }); }" />
+									<input type="button" value="Delete" data-bind="click: function () { user.remote.destroy({id: user().id}, function () { user.remote.clear(); userList.remote.load(); }); }" />
 								</span>
 								<span data-bind="visible: user().id == undefined">
 									<input type="button" value="Fake Email" data-bind="click: setFakeEmail" />

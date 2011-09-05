@@ -9,7 +9,7 @@
   1 => 
   array (
     'id' => 2,
-    'name' => 'Jeff Martin!!',
+    'name' => 'Jeff Martin',
     'email' => 'jeff@example.com',
     'favoriteColor' => 'red',
   ),

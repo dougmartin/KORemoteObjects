@@ -357,6 +357,7 @@
 		},
 		
 		clear: function () {
+			this.cacheKey = null;
 			this.state("init");
 			this.rootObject({});
 		},

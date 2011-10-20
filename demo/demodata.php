@@ -4,7 +4,7 @@
     'id' => 1,
     'name' => 'Doug Martin',
     'email' => 'doug@example.com',
-    'favoriteColor' => 'blue',
+    'favoriteColor' => 'green',
   ),
   1 => 
   array (

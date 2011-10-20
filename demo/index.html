@@ -22,11 +22,8 @@
 				jQuery(function () {
 				
 					userModel = function (user) {
-						this.id = user.id;
-						this.name = user.name;
-						this.email = user.email;
-						this.favoriteColor = user.favoriteColor;
-						this.createdAt = user.createdAt;
+						// to avoid a bunch of setters just copy over the passed object
+						jQuery.extend(this, user);
 					};
 					
 					viewModel = {
@@ -43,7 +40,9 @@
 								}
 							}
 						}),
-						userList: ko.remoteObservableArray("userList"),
+						userList: ko.remoteObservableArray("userList", {
+							"model": userModel
+						}),
 						selectedUserId: ko.observable(),
 						colors: ["blue", "red", "green", "pink", "lavender"]
 					};

@@ -144,34 +144,35 @@
 				return result;
 			}
 			
-			function convertToModel(data) {
-				return data;
-				if (this.remote.settings.model) {
-					return new this.remote.settings.model(data);
-				}
-				return data;
-			}
-			
-			function setData(action, type, data) {
-				if (this.remote.settings.setData) {
-					return this.remote.settings.setData(action, type, data);
-				}
-				if (remoteSettings.setData) {
-					return remoteSettings.setData(action, type, data);
-				}
-				return false;
-			}
-			
 			beforeSends = [function (jqXHR, settings) {
 				this.log({"action": action, "method": settings.type, "url": settings.url, "data": data});
 			}, this.remote.settings.ajax.beforeSend, remoteSettings.ajax.beforeSend];
 			
 			successes = [function (result, textStatus, jqXHR) {
-				var defaultError, parsedResult = parseResult.call(this, result);
+				var parsedResult = parseResult.call(this, result),
+					parsedData = parsedResult ? parsedResult.data || {} : {},
+					model = this.remote.settings.model,
+					defaultError, modelArray;
+				
+				function convertToModel(data) {
+					return model ? new model(data) : data;
+				}
 				
 				if (parsedResult && parsedResult.success) {
-					if (!setData.call(this, action, this.remote.type, parsedResult.data || {})) {
-						this.rootObject(convertToModel.call(this, parsedResult.data || {}));
+					if (this.remote.isArray) {
+						modelArray = [];
+						if (jQuery.isArray(parsedData)) {
+							jQuery.each(parsedData, function (i, parsedDatum) {
+								modelArray.push(convertToModel.call(this, parsedDatum));
+							});
+						}
+						else {
+							modelArray.push(convertToModel.call(this, parsedData));
+						}
+						this.rootObject(modelArray);
+					}
+					else {
+						this.rootObject(convertToModel.call(this, parsedData))
 					}
 					this.remote.state(addEnding(action, "ed"));
 					this.remote.error(undefined);
@@ -460,7 +461,7 @@
 	// the exact same as ko.observableArray except for the first two lines, I feel bad for all this copy pasta but result is buried in observableArray
 	ko.remoteObservableArray = function (type, options) {
 		var result = new ko.remoteObservable(type, options, []);
-		result.isArray = true;
+		result.remote.isArray = true;
 		
 		ko.utils.extend(result, ko.observableArray["fn"]);
 		

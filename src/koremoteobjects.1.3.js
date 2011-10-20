@@ -3,8 +3,7 @@
 		"getUrl": undefined,
 		"useRestMethods": undefined,
 		"ajax": {
-			"dataType": undefined,
-			"context": undefined		
+			"dataType": undefined
 		}
 	};
 	
@@ -32,8 +31,7 @@
 				"data": undefined,
 				"useRestMethods": undefined,
 				"ajax": {
-					"dataType": undefined,
-					"context": undefined
+					"dataType": undefined
 				}
 			}, options);
 			

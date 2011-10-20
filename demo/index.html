@@ -71,8 +71,13 @@
 				});
 			}
 				
-			function setFakeEmail() {
-				document.user.email.value = "fake" + Math.floor(Math.random() * 1000) + "@example.com";
+			function fillEmail() {
+				if (jQuery.trim(document.user.name.value.length) > 0) {
+					document.user.email.value = document.user.name.value.split(" ")[0].toLowerCase() + "@example.com";
+				}
+				else {
+					document.user.email.value = "user" + Math.floor(Math.random() * 1000) + "@example.com";
+				}
 			}
 			
 			function saveForm() {
@@ -115,7 +120,7 @@
 									<input type="button" value="Delete" data-bind="click: function () { user.remote.destroy({id: user().id}, function () { user.remote.clear(); userList.remote.load(); }); }" />
 								</span>
 								<span data-bind="visible: user().id == undefined">
-									<input type="button" value="Fake Email" data-bind="click: setFakeEmail" />
+									<input type="button" value="Fill Email" data-bind="click: fillEmail" />
 									<input type="button" value="Create" data-bind="click: saveForm" />
 								</span>
 							</td>

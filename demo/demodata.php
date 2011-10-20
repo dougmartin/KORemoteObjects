@@ -22,23 +22,9 @@
   ),
   3 => 
   array (
-    'id' => 4,
-    'name' => 'Allie Martin',
-    'email' => 'fake277@example.com',
-    'favoriteColor' => 'blue',
-  ),
-  4 => 
-  array (
     'id' => 5,
     'name' => 'Katie Martin',
     'email' => 'katie@example.com',
-    'favoriteColor' => 'blue',
-  ),
-  5 => 
-  array (
-    'id' => 6,
-    'name' => 'Sam Martin',
-    'email' => 'sam@example.com',
     'favoriteColor' => 'blue',
   ),
 );

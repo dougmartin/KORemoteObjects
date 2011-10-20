@@ -430,7 +430,7 @@
 	};	
 
 	ko.remoteObservable = function (type, options, initialValue) {
-		var observable = ko.observable(initialValue || {});
+		var observable = ko.observable(initialValue || (options.model ? new options.model({}) : {}));
 		
 		function remoteObservable() {
 			if (arguments.length > 0) {

@@ -340,6 +340,15 @@
 		
 	// these function reside under .remote, this refers to object.remote, not object
 	ko.remoteable["fn"] = {
+		cacheKey: null,
+		
+		createCacheKey: function (data) {
+			var key = [];
+			jQuery.each(data || {}, function (name, value) {
+				key.push(name + ":" + value);
+			});
+			return key.join("|");		
+		},
 		
 		init: function (data) {
 			this.helpers.log({"action": "init"});
@@ -355,7 +364,24 @@
 		load: function (data, onSuccess, onError, onComplete) {
 			checkedData = this.helpers.checkForFormData(data);
 			if (checkedData !== false) {
+				this.cacheKey = this.createCacheKey(checkedData);
 				this.helpers.ajax("load", checkedData, "GET", onSuccess, onError, onComplete);
+			}
+		},
+		
+		isCached: function (data) {
+			return this.cacheKey == this.createCacheKey(data);
+		},
+		
+		loadIfNotCached: function (data, onSuccess, onError, onComplete) {
+			checkedData = this.helpers.checkForFormData(data);
+			if (checkedData !== false) {
+				if (this.isCached(checkedData)) {
+					onSuccess(this.rootObject());
+				}
+				else {
+					this.load(data, onSuccess, onError, onComplete);
+				}
 			}
 		},
 		

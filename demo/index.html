@@ -6,7 +6,7 @@
 		<script type="text/javascript" src="../src/koremoteobjects.js"></script>
 		
 		<script type="text/javascript">
-			var viewModel;
+			var viewModel, userModel;
 			
 			ko.remoteObservable.debug = true;
 			
@@ -20,16 +20,18 @@
 			}
 			else {
 				jQuery(function () {
+				
+					userModel = function (user) {
+						this.id = user.id;
+						this.name = user.name;
+						this.email = user.email;
+						this.favoriteColor = user.favoriteColor;
+						this.createdAt = user.createdAt;
+					};
 					
 					viewModel = {
 						user: ko.remoteObservable("user", {
-							"data": {
-								"id": 0,
-								"name": "",
-								"email": "",
-								"favoriteColor": "",
-								"createdAt": 0
-							},
+							"model": userModel,
 							"validate": {
 								"rules":  {
 									"name": "required",

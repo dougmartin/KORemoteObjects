@@ -28,7 +28,8 @@
 			}),
 			isArray = false,			
 			settings = jQuery.extend({
-				"data": undefined,
+				"model": undefined,
+				"validate": undefined,
 				"useRestMethods": undefined,
 				"ajax": {
 					"dataType": undefined
@@ -131,7 +132,24 @@
 				if (remoteSettings.parseResult) {
 					return remoteSettings.parseResult(action, type, result);
 				}
+				
+				// conver to standard form if not already in it
+				if (!result.hasOwnProperty("success")) {
+					return {
+						success: true,
+						data: result
+					};
+				}
+				
 				return result;
+			}
+			
+			function convertToModel(data) {
+				return data;
+				if (this.remote.settings.model) {
+					return new this.remote.settings.model(data);
+				}
+				return data;
 			}
 			
 			function setData(action, type, data) {
@@ -153,7 +171,7 @@
 				
 				if (parsedResult && parsedResult.success) {
 					if (!setData.call(this, action, this.remote.type, parsedResult.data || {})) {
-						this.rootObject(parsedResult.data || {});
+						this.rootObject(convertToModel.call(this, parsedResult.data || {}));
 					}
 					this.remote.state(addEnding(action, "ed"));
 					this.remote.error(undefined);
@@ -319,7 +337,7 @@
 		}
 	};
 		
-	// these function reside under .remote, this referes to object.remote, not object
+	// these function reside under .remote, this refers to object.remote, not object
 	ko.remoteable["fn"] = {
 		
 		init: function (data) {

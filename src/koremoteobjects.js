@@ -359,7 +359,7 @@
 		clear: function () {
 			this.cacheKey = null;
 			this.state("init");
-			this.rootObject({});
+			this.rootObject(this.isArray ? [] : {});
 		},
 		
 		load: function (data, onSuccess, onError, onComplete) {

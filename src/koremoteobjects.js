@@ -377,11 +377,11 @@
 		loadIfNotCached: function (data, onSuccess, onError, onComplete) {
 			checkedData = this.helpers.checkForFormData(data);
 			if (checkedData !== false) {
-				if (this.isCached(checkedData)) {
-					onSuccess(this.rootObject());
-				}
-				else {
+				if (!this.isCached(checkedData)) {
 					this.load(data, onSuccess, onError, onComplete);
+				}
+				else if (onSuccess) {
+					onSuccess(this.rootObject());
 				}
 			}
 		},

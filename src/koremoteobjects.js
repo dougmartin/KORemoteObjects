@@ -127,7 +127,7 @@
 
 			function parseResult(result) {
 				if (this.remote.settings.parseResult) {
-					return settings.parseResult(action, type, result);
+					return this.remote.settings.parseResult(action, type, result);
 				}
 				if (remoteSettings.parseResult) {
 					return remoteSettings.parseResult(action, type, result);

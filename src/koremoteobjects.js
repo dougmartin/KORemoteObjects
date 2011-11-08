@@ -1,3 +1,9 @@
+//
+// KORemoteObjects v0.1
+// (c) Doug Martin - https://github.com/dougmartin/KORemoteObjects
+// License: MIT (http://www.opensource.org/licenses/mit-license.php)
+//
+
 (function (window, undefined) {
 	var remoteSettings = {
 		"getUrl": undefined,

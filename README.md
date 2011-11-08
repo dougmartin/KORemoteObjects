@@ -1,12 +1,18 @@
 # KORemoteObjects #
  
-A remote object extension to Knockout.js 1.3+
+A remote object extension to Knockout.js 1.3+ - https://github.com/dougmartin/KORemoteObjects
+
+(c) 2011 by Doug Martin
+
+License: MIT (http://www.opensource.org/licenses/mit-license.php)
+
+*NOTE* This library is still under development.  No API changes are planned but I reserve the right to change the API in future versions.
  
 ## Introduction ##
  
 KORemoteObjects adds a remoting interface to Knockout.js in the form of two new functions: ko.remoteObservable and ko.remoteObservableArray.
 These two functions mirror the ko.observable and ko.observableArray functions with the addition of a new "remote" namespace.  The remote
-namespace exposes a simple CRUD (create, retrieve, update, delete) interface to allow you to sync objects between the browser and the server.
+namespace exposes a CRUD (create, retrieve, update, delete) interface to allow you to sync objects between the browser and the server.
  
 ## Sample Usage ##
 
@@ -14,23 +20,27 @@ namespace exposes a simple CRUD (create, retrieve, update, delete) interface to 
     var user = ko.remoteObservable("user");
 
 	// create a new user
-	user.create({name: "Fred", email: "fred@example.com"}, function (response) {
+	user.remote.create({name: "Fred", email: "fred@example.com"}, function (response) {
 		// ... optionally process the response here.  At this point user() is the value of the processed response and can
-		// be referenced just like a ko.observable.
+		// be dereferenced just like a ko.observable in the code or in the templates like this...
+		//
+		// <div data-bind="with: user">
+		//     <span data-bind="text: name"></span> (<span data-bind="text: email"></span>)
+		// </div>
 	});
 
 	// load the user id of 10
-    user.load({id: 10}, function (response) {
+    user.remote.load({id: 10}, function (response) {
 		// ... 
     });
 	
 	// update an existing user
-	user.update({email: "fred2@example.com"}, function (response) {
+	user.remote.update({id: 10, name: "Fred2", email: "fred2@example.com"}, function (response) {
 		// ... 
     });
 	
 	// destroy a user (delete is a reserved word in Javascript)
-	user.destroy({id: 20}, function response) {
+	user.remote.destroy({id: 10}, function response) {
 		// ... 
     });
 	
@@ -48,17 +58,19 @@ namespace exposes a simple CRUD (create, retrieve, update, delete) interface to 
 		model: user
 	});
 	
-If you specify a model it is "newed" using the processed response from the server like this:
+When you specify a model it is "newed" using the processed response from the server like this:
 
 	var model = new user(processedResponse);
 	
 ## Sample Array Usage with Model ##
 
-    var users = ko.remoteObservableArray("user", {
-		model: user
-	});
-	
-	users.load({page: 1});
+    viewModel = {
+		users: ko.remoteObservableArray("user", {
+			model: user
+		})
+	};
+	ko.applyBindings(viewModel); 
+	viewModel.users.remote.load({page: 1});
 	
 Each element of the array will be a "newed" user model.  All the ko.observableArray functions are also defined and 
 users() can be accessed in the templates:
@@ -67,6 +79,69 @@ users() can be accessed in the templates:
 		<li data-bind="text: name" />
 	</ul>
 
+## Built in support for form posts ##
+
+There is built in support for form posts by simply passing a form variable for the data instead of a bare object.
+
+	<form name="createUser">
+		<p>
+			<label for="name">Name</label>
+			<input type="text" name="name" />
+		</p>
+		<p>
+			<label for="name">Email</label>
+			<input type="text" name="email" />
+		</p>
+		<input type="button" data-bind="click: function () { user.create(document.forms.createUser); }">
+	</form>
+	
+## Built in support for form validation using jQuery Validate ##
+
+If you include jquery.validate.js KORemoteObjects will automatically add validation on form submits.  The validation
+rules are set when the remote observable is defined.  The syntax for validations can be found in the jQuery
+validation site.
+
+	user = ko.remoteObservable("user", {
+		"validate": {
+			"rules":  {
+				"name": "required",
+				"email": {
+					"required": true,
+					"email": true
+				}
+			}
+		}
+	});
+
+## Built in logging ##
+
+For ease of development a debug log is maintained exposed using the "remoteObservableDebugLog" binding.  To display
+the log at the bottom of your page you would do this:
+
+	<div class="debugLog" data-bind="remoteObservableDebugLog: ko.remoteObservable.debugLog"></div>
+	
+## Built in cacheing ##
+
+The library maintains a cache of the last load.  The cache is used internally and is exposed with the following function:
+
+	user.remote.loadIfNotCached({id: 10});
+	
+This allows you to put loads in your code without having to add conditional code to check if it is already loaded.  
+NOTE: the cache key is built from the .load() call data, not the response data from the server.
+
+## Required Libraries ##
+
+jQuery (1.6.2 or above) and knockout.js (1.3 or above)
+	
+## Supporting Libraries ##
+
+jquery.validate.js
+ 
+## Demo ##
+ 
+A demo is available in the respository that shows CRUD operations on a list of users.  The data is backed using a simple 
+text file.
+	
 ## Configuration ##
  
 To avoid a lot of boilerplate code KORemoteObjects adopts the convention over configuration philosopy.  However all the convention
@@ -92,7 +167,7 @@ Configuration:
 	
 	ko.remoteSetup({
 		getUrl: function (action, type, method) {
-			return "/api/" + type + "/" + (action === "create" ? "add" : action);
+			// same as above
 		}
 	});
 
@@ -158,7 +233,7 @@ Configuration:
 		}
 	});
 	
-### Parsing response data from server calls ###
+### Parsing response results from server calls ###
 
 Convention: convert responses to the following form
 
@@ -192,9 +267,7 @@ Configuration:
 	
 Convention: KORemoteObjects uses jQuery.ajax() for server communications.
 
-Configuration:
-
-You can override the default jQuery.ajax options
+Configuration: You can override the default jQuery.ajax options
 
 	ko.remoteObservable("user", {
 		ajax: {
@@ -210,67 +283,3 @@ You can override the default jQuery.ajax options
 		}
 	});	 
 	
-## Built in support for form posts ##
-
-There is built in support for form posts by simply passing a form variable for the data instead of a bare object.
-
-	<form name="user">
-		<p>
-			<label for="name">Name</label>
-			<input type="text" name="name" />
-		</p>
-		<p>
-			<label for="name">Email</label>
-			<input type="text" name="email" />
-		</p>
-		<input type="submit" data-bind="click: function () { user.create(document.forms.user); }">
-	</form>
-	
-## Built in support for form validation using jQuery Validate ##
-
-If you include jquery.validate.js KORemoteObjects will automatically add validation on form submits.  The validation
-rules are set when the remote observable is defined.  The syntax for validations can be found in the jQuery
-validation site.
-
-	user = ko.remoteObservable("user", {
-		"validate": {
-			"rules":  {
-				"name": "required",
-				"email": {
-					"required": true,
-					"email": true
-				}
-			}
-		}
-	});
-
-## Built in logging ##
-
-For ease of development a debug log is maintained exposed using the "remoteObservableDebugLog" binding.  To display
-the log at the bottom of your page you would do this:
-
-	<div class="debugLog" data-bind="remoteObservableDebugLog: ko.remoteObservable.debugLog"></div>
-	
-## Built in cacheing ##
-
-The library maintains a cache of the last load.  The cache is used internally and is exposed with the following function:
-
-	user.loadIfNotCached({id: 10});
-	
-This allows you to put loads in your code without having to add conditional code to check if it is already loaded which
-reduces server load.  The cache key is built from the .load() call data, not the response.
-
-
-## Required Libraries ##
-
-jQuery (1.6.2 or above)
-knockout.js (1.3 or above)
-	
-## Supporting Libraries ##
-
-jquery.validate.js
- 
-## Demo ##
- 
-A demo is available in the respository that shows CRUD operations on a list of users.  The data is backed using a simple 
-text file.

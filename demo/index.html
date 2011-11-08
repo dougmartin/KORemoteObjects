@@ -1,5 +1,7 @@
 <html>
 	<head>
+		<title>KORemoteObject Demo</title>
+		
 		<script type="text/javascript" src="../3rd/jquery-1.6.2.js"></script>
 		<script type="text/javascript" src="../3rd/jquery.validate.js"></script>
 		<script type="text/javascript" src="../3rd/knockout-1.3.0beta.debug.js"></script>
@@ -91,44 +93,69 @@
 				})
 			}
 		</script>
+		
+		<style type="text/css">
+		
+			th {
+				text-align: left;
+			}
+		</style>
+		
 	</head>
 	<body>
 		<div id="remoteInput">
-			<form name="load">
-				<p>
-					Load User: 
-					<select name="userId" data-bind="options: userList, optionsText: 'name', optionsValue: 'id', value: selectedUserId, optionsCaption: 'Choose...'"></select>
-					(current user remote state: <span data-bind="text: user.remote.state"></span>)
-				</p>
-				<p data-bind="visible: user.remote.error">
-					<span data-bind="text: user.remote.error"></span>
-				</p>
-			</form>
+			<h1>KORemoteObject Demo</h1>
 			
-			<form name="user">
-				<p>
-					<table>
-						<tr data-bind="visible: user().id"><td>ID</td><td data-bind="text: user().id"></td></tr>
-						<tr><td>Name</td><td><input type="text" name="name" data-bind="value: user().name"></td></tr>
-						<tr><td>Email</td><td><input type="text" name="email" data-bind="value: user().email"></td></tr>
-						<tr><td>Favorite Color</td><td><select name="favoriteColor" data-bind="options: colors, value: user().favoriteColor, optionsCaption: 'Choose...'"></td></tr>
-						<tr>
-							<td>&nbsp;</td>
-							<td>
-								<input type="button" value="Clear" data-bind="click: function () { user.remote.clear(); document.load.userId.selectedIndex = 0; }" />
-								<span data-bind="visible: user().id">
-									<input type="button" value="Update" data-bind="click: saveForm" />
-									<input type="button" value="Delete" data-bind="click: function () { user.remote.destroy({id: user().id}, function () { user.remote.clear(); userList.remote.load(); }); }" />
-								</span>
-								<span data-bind="visible: user().id == undefined">
-									<input type="button" value="Fill Email" data-bind="click: fillEmail" />
-									<input type="button" value="Create" data-bind="click: saveForm" />
-								</span>
-							</td>
-						</tr>
-					</table>
-				</p>
-			</form>
+			<p>
+				This demo shows the four CRUD (create, retrieve, update and delete) operations that KORemoteObject adds for remote objects
+				to Knockout.js
+			</p>
+			
+			<p>
+				The "database" is a simple text file (demodata.php) for ease of running the demo.
+			</p>
+			
+			<div style="padding: 10px; border: 1px solid #000">
+				<form name="load">
+					<p>
+						Load User: 
+						<select name="userId" data-bind="options: userList, optionsText: 'name', optionsValue: 'id', value: selectedUserId, optionsCaption: 'Choose...'"></select>
+						(current user remote state: <span data-bind="text: user.remote.state"></span>)
+					</p>
+					<p data-bind="visible: user.remote.error">
+						<span data-bind="text: user.remote.error"></span>
+					</p>
+				</form>
+				
+				<form name="user">
+					<p>
+						<table>
+							<tr data-bind="visible: user().id"><td>ID</td><td data-bind="text: user().id"></td></tr>
+							<tr><td>Name</td><td><input type="text" name="name" data-bind="value: user().name"></td></tr>
+							<tr><td>Email</td><td><input type="text" name="email" data-bind="value: user().email"></td></tr>
+							<tr><td>Favorite Color</td><td><select name="favoriteColor" data-bind="options: colors, value: user().favoriteColor, optionsCaption: 'Choose...'"></td></tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td>
+									<input type="button" value="Clear" data-bind="click: function () { user.remote.clear(); document.load.userId.selectedIndex = 0; }" />
+									<span data-bind="visible: user().id">
+										<input type="button" value="Update" data-bind="click: saveForm" />
+										<input type="button" value="Delete" data-bind="click: function () { user.remote.destroy({id: user().id}, function () { user.remote.clear(); userList.remote.load(); }); }" />
+									</span>
+									<span data-bind="visible: user().id == undefined">
+										<input type="button" value="Fill Email" data-bind="click: fillEmail" />
+										<input type="button" value="Create" data-bind="click: saveForm" />
+									</span>
+								</td>
+							</tr>
+						</table>
+					</p>
+				</form>
+			</div>
+			
+			<p>
+				The table below is a live debug log that is built into KORemoteObject.  It is disabled by default.
+			</p>
 			
 			<div data-bind="remoteObservableDebugLog: ko.remoteObservable.debugLog">
 			</div>

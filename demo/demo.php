@@ -56,7 +56,7 @@
 	
 	function saveDatabase($users) {
 		if (@file_put_contents("demodata.php", "<?php return " . var_export($users, true) . ";") === false) {
-			error("Unable to save the database");
+			error("Unable to save the database!  (is the current folder read-only or is demodata.php readonly?)");
 		}
 	}
 	

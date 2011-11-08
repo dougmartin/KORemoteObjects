@@ -127,10 +127,10 @@
 
 			function parseResult(result) {
 				if (this.remote.settings.parseResult) {
-					return this.remote.settings.parseResult(result);
+					return this.remote.settings.parseResult(action, type, result);
 				}
 				if (remoteSettings.parseResult) {
-					return remoteSettings.parseResult(result);
+					return remoteSettings.parseResult(action, type, result);
 				}
 				
 				// convert to standard form if not already in it
